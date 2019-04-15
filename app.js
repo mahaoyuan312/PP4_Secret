@@ -47,7 +47,7 @@ app.post("/register", function(req, res){
       console.log(err);
     }else {
       //we want to render the secretes page until the user has entered the Username and Password
-      res.render("secretes");
+      res.render("secrets");
     }
 
   });

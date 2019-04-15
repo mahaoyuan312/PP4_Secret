@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
+    "mongoose": "^5.5.1"
+  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -16,10 +23,5 @@
   "bugs": {
     "url": "https://github.com/mahaoyuan312/PP4_Secret/issues"
   },
-  "homepage": "https://github.com/mahaoyuan312/PP4_Secret#readme",
-  "dependencies": {
-    "body-parser": "^1.18.3",
-    "ejs": "^2.6.1",
-    "express": "^4.16.4"
-  }
+  "homepage": "https://github.com/mahaoyuan312/PP4_Secret#readme"
 }

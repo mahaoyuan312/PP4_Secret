@@ -3,7 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-
+const encrypt = require("mongoose-encryption");
 const app = express();
 
 app.use(express.static("public"));
@@ -31,10 +31,16 @@ app.get("/register", function(req, res) {
 });
 
 //Schema for the user, pretty much like a structure for object
-const userSchema = {
+//create the schema by using mongoose.Schema provides more feature
+const userSchema = new mongoose.Schema({
   email: String,
   password: String
-};
+});
+
+const secret = "mycatnamedkimi.";
+//add encrypt package to the schema
+//
+userSchema.plugin(encrypt, {secret:secret, encryptedFields: ["password"]});
 
 //create a user model using the schema above
 const User = new mongoose.model("User", userSchema);
@@ -45,6 +51,7 @@ app.post("/register", function(req, res) {
     email: req.body.username,
     password: req.body.password
   });
+  //encrypted
   newUser.save(function(err) {
     if (err) {
       console.log(err);
@@ -60,6 +67,7 @@ app.post("/register", function(req, res) {
 app.post("/login", function(req, res) {
   const username = req.body.username;
   const password = req.body.password;
+  //decrypted
   User.findOne({
       email: username
     },

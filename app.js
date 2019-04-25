@@ -19,7 +19,7 @@ app.use(bodyParser.urlencoded({
 //configure and initialize passport
 app.use(session({
   secret: "This is a secret.",
-  resave:false,
+  resave: false,
   saveUninitialized: false
 }));
 
@@ -49,6 +49,14 @@ app.get("/register", function(req, res) {
   res.render("register");
 });
 
+app.get("/secrets", function(req,res){
+  if(req.isAuthenticated()){
+    res.render ("secrets");
+  }else {
+    res.redirect("/login");
+  }
+});
+
 //Schema for the user, pretty much like a structure for object
 //create the schema by using mongoose.Schema provides more feature
 //has to be a mongoose schema to use the plugin
@@ -60,8 +68,6 @@ const userSchema = new mongoose.Schema({
 //use to hash in salt user information and save to mongoDB database
 userSchema.plugin(passportLocalMongoose);
 
-//add user schema plugin for the environment variable encryption key
-//userSchema.plugin(encrypt, {secret:process.env.SECRET, encryptedFields: ["password"]});
 
 //create a user model using the schema above
 const User = new mongoose.model("User", userSchema);
@@ -73,53 +79,45 @@ passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-
-//render secret page  - register
-app.post("/register", function(req, res) {
-  bcrypt.hash(req.body.password, 10, function(err, hash) {
-    const newUser = new User({
-      email: req.body.username,
-      password: hash
-    });
-    //save the new user to the database
-    newUser.save(function(err) {
-      if (err) {
+/*use passport.authenticate allow user to redirect to the page need authentication
+without need to enter password again and gain */
+app.post("/register", function(req, res){
+  User.register( {username:req.body.username}, req.body.password, function(err,user){
+      if(err) {
         console.log(err);
-      } else {
-        //we want to render the secretes page until the user has entered the Username and Password
-        res.render("secrets");
+      }else {
+        passport.authenticate("local")(req,res,function(){
+          res.redirect("secrets");
+        });
       }
-
-    });
   });
+  }
+);
 
+
+//render secret page - login
+app.post("/login", function (req,res) {
+  const user = new User({
+  username : req.body.username,
+  password : req.body.password
+  });
+//use the passport login function
+  req.login(user,function(err){
+    if(err){
+      console.log(err);
+    }else{
+      passport.authenticate("local")(req,res,function(){
+        res.redirect("/secrets");
+      });
+    }
+  });
 });
 
-//reder secret page - login
-app.post("/login", function(req, res) {
-  const username = req.body.username;
-  const password = req.body.password;
-
-  User.findOne({
-      email: username
-    },
-    function(err, foundUser) {
-      if (err) {
-        console.log(err);
-      } else {
-        if (foundUser) {
-          // Load hash from password DB.
-          bcrypt.compare(password, foundUser.password, function(err, result) {
-            if (result) {
-              res.render("secrets");
-            }
-          });
-        }
-      }
-    });
-
+app.get("/logout",function(req,res){
+  req.logout();
+  res.redirect("/");
 });
-
+//start server
 app.listen(3000, function() {
   console.log("Server started on port:3000");
 

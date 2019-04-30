@@ -46,6 +46,13 @@ app.get("/login", function(req, res) {
 
 });
 
+app.get("/submit", function(req,res){
+  if (req.isAuthenticated()) {
+    res.render("submit");
+  } else {
+    res.redirect("/login");
+  }
+});
 app.get("/register", function(req, res) {
   res.render("register");
 });

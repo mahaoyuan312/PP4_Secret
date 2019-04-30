@@ -49,11 +49,24 @@ app.get("/login", function(req, res) {
 app.get("/register", function(req, res) {
   res.render("register");
 });
+app.get("/auth/google",
+  passport.authenticate('google', {
+    scope: ["profile"]
+  }));
 
-app.get("/secrets", function(req,res){
-  if(req.isAuthenticated()){
-    res.render ("secrets");
-  }else {
+app.get("/auth/google/secrets",
+  passport.authenticate("google", {
+    failureRedirect: "/login"
+  }),
+  function(req, res) {
+    // Successful authentication, redirect Secrets page.
+    res.redirect("/secrets");
+  });
+
+app.get("/secrets", function(req, res) {
+  if (req.isAuthenticated()) {
+    res.render("secrets");
+  } else {
     res.redirect("/login");
   }
 });
@@ -63,11 +76,13 @@ app.get("/secrets", function(req,res){
 //has to be a mongoose schema to use the plugin
 const userSchema = new mongoose.Schema({
   email: String,
-  password: String
+  password: String,
+  googleId: String
 });
 
 //use to hash in salt user information and save to mongoDB database
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 
 //create a user model using the schema above
@@ -77,56 +92,68 @@ const User = new mongoose.model("User", userSchema);
 passport.use(User.createStrategy());
 //create a user login createStrategy:
 //serializeUser: store user info ; deserializeUser: get user info
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+//change to passport serializeUser so it works only for local but for all Strategies
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function(err, user) {
+    done(err, user);
+  });
+});
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: "http://localhost:3000/auth/google/secrets",
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
-  },//accessToken: token sent back from google that allow us to get data related to users
+  }, //accessToken: token sent back from google that allow us to get data related to users
   function(accessToken, refreshToken, profile, cb) {
-    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+    User.findOrCreate({
+      googleId: profile.id
+    }, function(err, user) {
       return cb(err, user);
     });
   }
 ));
 /*use passport.authenticate allow user to redirect to the page need authentication
-without need to enter password again and gain */
-app.post("/register", function(req, res){
-  User.register( {username:req.body.username}, req.body.password, function(err,user){
-      if(err) {
-        console.log(err);
-      }else {
-        passport.authenticate("local")(req,res,function(){
-          res.redirect("secrets");
-        });
-      }
+without need to enter password again and again */
+app.post("/register", function(req, res) {
+  User.register({
+    username: req.body.username
+  }, req.body.password, function(err, user) {
+    if (err) {
+      console.log(err);
+    } else {
+      passport.authenticate("local")(req, res, function() {
+        res.redirect("secrets");
+      });
+    }
   });
-  }
-);
+});
 
 
 //render secret page - login
-app.post("/login", function (req,res) {
+app.post("/login", function(req, res) {
   const user = new User({
-  username : req.body.username,
-  password : req.body.password
+    username: req.body.username,
+    password: req.body.password
+
   });
-//use the passport login function
-  req.login(user,function(err){
-    if(err){
+  //use the passport login function
+  req.login(user, function(err) {
+    if (err) {
       console.log(err);
-    }else{
-      passport.authenticate("local")(req,res,function(){
+    } else {
+      passport.authenticate("local")(req, res, function() {
         res.redirect("/secrets");
       });
     }
   });
 });
 
-app.get("/logout",function(req,res){
+app.get("/logout", function(req, res) {
   req.logout();
   res.redirect("/");
 });

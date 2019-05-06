@@ -94,11 +94,15 @@ app.get("/auth/google/secrets",
   });
 
 app.get("/secrets", function(req, res) {
-  if (req.isAuthenticated()) {
-    res.render("secrets");
-  } else {
-    res.redirect("/login");
+  User.find({"secret":{$ne: null}},function (err,founduser) {
+  if(err) {
+    console.log(err);
+  }else {
+    if (founduser) {
+      res.render("secrets",{usersWithSecrets: founduser});
+    }
   }
+});
 });
 
 //Schema for the user, pretty much like a structure for object

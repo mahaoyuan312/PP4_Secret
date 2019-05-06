@@ -30,7 +30,7 @@ app.use(passport.session());
 
 
 //connect to the default local port of the mongodb
-mongoose.connect("mongodb://localhost:27017/userDB", {
+mongoose.connect("mongodb+srv://mahaoyuan312:test123@secret-uhx2t.mongodb.net/userDB", {
   useNewUrlParser: true
 });
 

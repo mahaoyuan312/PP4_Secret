@@ -46,6 +46,7 @@ app.get("/login", function(req, res) {
 
 });
 
+//check if user has logged in
 app.get("/submit", function(req,res){
   if (req.isAuthenticated()) {
     res.render("submit");
@@ -53,6 +54,28 @@ app.get("/submit", function(req,res){
     res.redirect("/login");
   }
 });
+app.post("/submit", function (req, res) {
+  //save the user created secret
+  const subbmittedSecret  = req.body.secret;
+  //find the users detail
+  User.findById(req.user.id, function (err, founduser) {
+    if(err) {
+      console.log(err);
+    } else{
+      if (founduser) {
+        founduser.secret = subbmittedSecret;
+        founduser.save(function () {
+          res.redirect("/secrets");
+
+        })
+
+      }
+    }
+
+  })
+
+
+})
 app.get("/register", function(req, res) {
   res.render("register");
 });
@@ -84,7 +107,8 @@ app.get("/secrets", function(req, res) {
 const userSchema = new mongoose.Schema({
   email: String,
   password: String,
-  googleId: String
+  googleId: String,
+  secret: String
 });
 
 //use to hash in salt user information and save to mongoDB database
